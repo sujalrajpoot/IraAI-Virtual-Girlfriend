@@ -21,10 +21,7 @@ pip install requests
 
 ## Installation
 - Clone or download the repository.
-- Ensure all dependencies are installed by running:
-```bash
-  pip install -r requirements.txt
-```
+- Ensure all dependencies are installed by running.
 
 ## Getting Your Access Token and Firebase ID
 
