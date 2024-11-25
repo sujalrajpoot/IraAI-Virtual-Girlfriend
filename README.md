@@ -27,7 +27,7 @@ pip install requests
 
 To use the IraAI class, you'll need your **access_token** and **Firebase ID**. Follow the steps below to retrieve them:
 ```
-1. Log in to your account on the IraAI platform.
+1. Log in to your account on the IraAI platform (https://ira.rumik.ai/).
 2. Open the browser's developer tools (`F12` or `Ctrl+Shift+I` on most browsers).
 3. Navigate to the **Network** tab.
 4. Look for API requests (messages) containing the `Authorization` header for your `access_token`.
