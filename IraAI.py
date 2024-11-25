@@ -1,21 +1,21 @@
 import requests
 from datetime import datetime
 
-class RumikaAI: 
+class IraAI: 
     """
-    A class to interact with the RumikaAI service.
+    A class to interact with the IraAI service.
 
     # Attributes
-        access_token (str): The access token required to authenticate with the RumikaAI service.
+        access_token (str): The access token required to authenticate with the IraAI service.
         firebaseId (str): The unique identifier for the user in the Firebase system.
 
     # Methods
         __init__(access_token: str, firebaseId: str) -> None:
-            Initializes the RumikaAI instance with the provided access token and Firebase ID.
+            Initializes the IraAI instance with the provided access token and Firebase ID.
     """
     def __init__(self, access_token: str, firebaseId: str) -> None:
         """
-        Initializes the RumikaAI instance.
+        Initializes the IraAI instance.
 
         # Args
             access_token (str): The access token required for authentication.
@@ -29,7 +29,7 @@ class RumikaAI:
 
     def chat(self, query: str, stream: bool = True) -> str:
         """
-        Sends a chat message to the RumikaAI API and returns the response.
+        Sends a chat message to the IraAI API and returns the response.
 
         Args:
             query (str): The user's message to send to the chatbot.
@@ -41,9 +41,19 @@ class RumikaAI:
         access_token = str(self.access_token).removeprefix("Bearer ").strip()
         headers = {
             'accept': 'application/json, text/plain, */*',
+            'accept-language': 'en-US,en;q=0.9',
             'authorization': f'Bearer {access_token}',
             'content-type': 'application/json',
+            'dnt': '1',
             'origin': 'https://ira.rumik.ai',
+            'priority': 'u=1, i',
+            'referer': 'https://ira.rumik.ai/',
+            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         }
 
@@ -95,8 +105,8 @@ class RumikaAI:
             return f"\033[1;91mRequest failed: {str(e)}\033[0m"
 
 if __name__ == "__main__":
-    AI = RumikaAI(access_token="Bearer eyJ......Q", firebaseId="An....3")
+    AI = IraAI(access_token="Bearer eyJ......Q", firebaseId="An....3")
     while True:
         query = input("You: ")
         if not query.strip():continue
-        print(f"\nRumikaAI: \033[1;93m{AI.chat(query=query.strip(), stream=False)}\033[0m\n")
+        print(f"\nIraAI: \033[1;93m{AI.chat(query=query.strip(), stream=False)}\033[0m\n")
