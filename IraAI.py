@@ -76,6 +76,8 @@ class IraAI:
                 with open(self.credentials_file, 'w') as json_file:
                     json.dump(response.json(), json_file, indent=4)
                 return f"\033[1;92mToken saved to {self.credentials_file} successfully.\033[0m\n"
+            elif response.status_code==400:
+                return f"\033[1;91mError {json.loads(response.content)['error']['message']} Make Sure You have Provided the ***KEY*** and ***REFRESH_TOKEN***\033[0m\n"
             else:
                 return f"\033[1;91mError {response.status_code}: {response.content}\033[0m\n"
         except requests.exceptions.RequestException as e:
