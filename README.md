@@ -5,10 +5,9 @@
 - Chat with IraAI using natural language.
 - Real-time streaming responses for a smooth conversation experience.
 - AI reactions including "like," "love," and "haha."
-- Customizable for different use cases by integrating your own access tokens and Firebase IDs.
 
 ## How It Works
-IraAI interacts with an API to simulate a virtual girlfriend experience. You provide your **access token** and **Firebase ID**, and the program sends your queries to the API to receive responses.
+IraAI interacts with an API to simulate a virtual girlfriend experience. You provide your **KEY** and **REFRESH_TOKEN**, and the program sends your queries to the API to receive responses.
 
 ## Prerequisites
 Before you start, ensure you have:
@@ -17,36 +16,33 @@ Before you start, ensure you have:
 ```bash
 pip install requests
 ```
-- Your personal access token and Firebase ID for authentication.
+- Your personal KEY and REFRESH_TOKEN for authentication.
 
 ## Installation
 - Clone or download the repository.
 - Ensure all dependencies are installed.
 
-## Getting Your Access Token and Firebase ID
+## Getting Your KEY and REFRESH_TOKEN
 
-To use the IraAI class, you'll need your **access_token** and **Firebase ID**. Follow the steps below to retrieve them:
+To use the IraAI class, you'll need your **KEY** and **REFRESH_TOKEN**. Follow the steps below to retrieve them:
 ```
 1. Log in to your account on the IraAI platform (https://ira.rumik.ai/).
 2. Open the browser's developer tools (`F12` or `Ctrl+Shift+I` on most browsers).
 3. Navigate to the **Network** tab.
-4. Look for API requests (messages) containing the `Authorization` header for your `access_token`.
-5. Copy the `Firebase ID` from the request payload.
+4. Look for API requests (https://securetoken.googleapis.com/v1/token?key=).
+5. Copy the `KEY` and `REFRESH_TOKEN` from the request payload.
 ```
 
 Refer to the image below for detailed instructions:
 
-![How to Get Access Token](access_token.png)
-![How to Get Firebase ID](Firebase_ID.png)
+![How to Get KEY and REFRESH_TOKEN](Credentials.png)
 
 ## Usage
 - Start chatting with IraAI:
 
 ```python
 if __name__ == "__main__":
-  access_token = "your_access_token_here"
-  firebaseId = "your_firebase_id_here"
-  IraAI = IraAI(access_token, firebaseId)
+  IraAI = IraAI()
   response = IraAI.chat("Hello, Ira!")
   print(response)
 ```
@@ -54,13 +50,13 @@ if __name__ == "__main__":
 ## Error Handling
 The program includes robust error handling:
 
-- If the access token is invalid or expired, you'll see a clear error message:
-  - Token expired.
+- If the KEY and REFRESH_TOKEN is invalid or expired, you'll see a clear error message:
+  - Token expired and in few moments it will Generating a new one automatically.
 - If the request fails, the error will be displayed:
   - Request failed: Connection timed out.
 
 ## Notes
-- Ensure your access token is valid to avoid authentication errors.
+- Ensure your KEY and REFRESH_TOKEN is valid to avoid authentication errors.
 - API response time depends on your network speed and server availability.
 - This project is designed for entertainment purposes.
 

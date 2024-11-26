@@ -1,48 +1,101 @@
+import os
+import json
 import requests
 from datetime import datetime
+from dotenv import load_dotenv;load_dotenv()
 
-class IraAI: 
+class IraAI:
     """
-    A class to interact with the IraAI service.
+    ## A class to interact with the IraAI chatbot API. Handles token management, user authentication, and sending/receiving chat messages.
 
-    # Attributes
-        access_token (str): The access token required to authenticate with the IraAI service.
-        firebaseId (str): The unique identifier for the user in the Firebase system.
-
-    # Methods
-        __init__(access_token: str, firebaseId: str) -> None:
-            Initializes the IraAI instance with the provided access token and Firebase ID.
+    - Attributes:
+        - access_token (str): Bearer token for authenticating API requests.
+        - firebaseId (str): Unique identifier for the user.
     """
-    def __init__(self, access_token: str, firebaseId: str) -> None:
+    def __init__(self) -> None:
         """
-        Initializes the IraAI instance.
-
-        # Args
-            access_token (str): The access token required for authentication.
-            firebaseId (str): The unique Firebase ID associated with the user.
-
-        # Returns
-            None
+        - Initializes the IraAI instance by loading or generating necessary credentials.
+        - If the credentials file does not exist or is corrupted, it fetches a new token.
         """
-        self.access_token = access_token
-        self.firebaseId = firebaseId
+        self.credentials_file = r'IraAI.json'  # Path to the credentials file
+        try:
+            # Check if the credentials file exists
+            if os.path.exists(self.credentials_file):
+                with open(self.credentials_file, 'r') as json_file:
+                    data = json.load(json_file)
+                # Set attributes from the JSON data
+                self.access_token = data['access_token']
+                self.firebaseId = data['user_id']
+            else:
+                raise FileNotFoundError("Credentials File Not Found.")
+        except FileNotFoundError as e:
+            # Handle missing credentials file
+            print(f"\033[1;91m{e}\033[0m")
+            print(self._get_token())  # Fetch a new token
+            self.__init__()  # Reinitialize after fetching the token
+        except json.JSONDecodeError:
+            # Handle corrupted or invalid JSON file
+            print("\033[1;91mError: Your JSON file is corrupted or does not match the required credentials format. Please reinitialize or regenerate the file.\033[0m")
+            print(self._get_token())  # Fetch a new token
+            self.__init__()  # Reinitialize after fetching the token
+        except KeyError as e:
+            # Handle missing keys in the JSON file
+            print(f"\033[1;91mError: Missing required key {e} in the JSON file. Please reinitialize or regenerate the file.\033[0m")
+            print(self._get_token())  # Fetch a new token
+            self.__init__()  # Reinitialize after fetching the token
+
+    def _get_token(self) -> str:
+        """
+        ## Fetches a new access token from the secure token API and saves it to a JSON file.
+
+        - Returns:
+            - str: Success or error message based on the response.
+        """
+        headers = {
+            'accept': '*/*',
+            'content-type': 'application/x-www-form-urlencoded',
+            'origin': 'https://ira.rumik.ai',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        }
+        params = {'key': os.getenv('KEY')}
+        data = {
+            'grant_type': 'refresh_token',
+            'refresh_token': os.getenv('REFRESH_TOKEN'),
+        }
+        try:
+            response = requests.post(
+                'https://securetoken.googleapis.com/v1/token',
+                params=params,
+                headers=headers,
+                data=data,
+                timeout=100  # Set a timeout for the request
+            )
+
+            if response.status_code == 200:
+                # Save the response content to the credentials file
+                with open(self.credentials_file, 'w') as json_file:
+                    json.dump(response.json(), json_file, indent=4)
+                return f"\033[1;92mToken saved to {self.credentials_file} successfully.\033[0m\n"
+            else:
+                return f"\033[1;91mError {response.status_code}: {response.content}\033[0m\n"
+        except requests.exceptions.RequestException as e:
+            return f"\033[1;91mRequest failed: {str(e)}\033[0m\n"
 
     def chat(self, query: str, stream: bool = True) -> str:
         """
-        Sends a chat message to the IraAI API and returns the response.
+        ## Sends a chat message to the IraAI API and returns the response.
 
-        Args:
-            query (str): The user's message to send to the chatbot.
-            stream (bool): Whether to print the response in real-time (default: True).
+        - Args:
+            - query (str): The user's message to send to the chatbot.
+            - stream (bool): Whether to print the response in real-time (default: True).
 
-        Returns:
-            str: The complete chatbot response.
+        - Returns:
+            - str: The complete chatbot response.
         """
-        access_token = str(self.access_token).removeprefix("Bearer ").strip()
         headers = {
             'accept': 'application/json, text/plain, */*',
             'accept-language': 'en-US,en;q=0.9',
-            'authorization': f'Bearer {access_token}',
+            'authorization': f'Bearer {self.access_token}',
             'content-type': 'application/json',
             'dnt': '1',
             'origin': 'https://ira.rumik.ai',
@@ -76,7 +129,6 @@ class IraAI:
             ],
             'chemistryId': 1,
         }
-
         try:
             # Send the chat request
             response = requests.post(
@@ -98,14 +150,14 @@ class IraAI:
                     streaming_response += stream_data
                 return streaming_response
             elif response.status_code == 403:
-                return "\033[1;91mToken expired.\033[0m"
+                return "\033[1;91mToken expired. Generating a new one...\033[0m"
             else:
                 return f"Error {response.status_code}: {response.content}"
         except requests.exceptions.RequestException as e:
             return f"\033[1;91mRequest failed: {str(e)}\033[0m"
 
 if __name__ == "__main__":
-    AI = IraAI(access_token="Bearer eyJ......Q", firebaseId="An....3")
+    AI = IraAI()
     while True:
         query = input("You: ")
         if not query.strip():continue
