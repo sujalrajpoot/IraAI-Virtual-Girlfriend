@@ -83,13 +83,12 @@ class IraAI:
         except requests.exceptions.RequestException as e:
             return f"\033[1;91mRequest failed: {str(e)}\033[0m\n"
 
-    def chat(self, query: str, stream: bool = True) -> str:
+    def chat(self, query: str) -> str:
         """
         ## Sends a chat message to the IraAI API and returns the response.
 
         - Args:
             - query (str): The user's message to send to the chatbot.
-            - stream (bool): Whether to print the response in real-time (default: True).
 
         - Returns:
             - str: The complete chatbot response.
@@ -137,7 +136,7 @@ class IraAI:
                 'https://rumik-ai.onrender.com/v1/users/messages',
                 headers=headers,
                 json=json_data,
-                stream=stream,
+                stream=True,
                 timeout=100  # Set a timeout for the request
             )
 
@@ -147,12 +146,13 @@ class IraAI:
                 data = response.json()
                 for message in data:
                     stream_data = f"{message['content']} "
-                    if stream:
-                        print(stream_data, end="", flush=True)
                     streaming_response += stream_data
                 return streaming_response
             elif response.status_code == 403:
-                return "\033[1;91mToken expired. Generating a new one...\033[0m"
+                print("\033[1;91mToken expired. Generating a new one...\033[0m")
+                print(self._get_token())
+                self.__init__()
+                return self.chat(query=query)
             else:
                 return f"Error {response.status_code}: {response.content}"
         except requests.exceptions.RequestException as e:
@@ -163,4 +163,4 @@ if __name__ == "__main__":
     while True:
         query = input("You: ")
         if not query.strip():continue
-        print(f"\nIraAI: \033[1;93m{AI.chat(query=query.strip(), stream=False)}\033[0m\n")
+        print(f"\nIraAI: \033[1;93m{AI.chat(query=query.strip())}\033[0m\n")
