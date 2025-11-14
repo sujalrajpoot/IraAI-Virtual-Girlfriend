@@ -5,22 +5,46 @@
 - Chat with IraAI using natural language.
 - Real-time streaming responses for a smooth conversation experience.
 - AI reactions including "like," "love," and "haha."
+- You can now also enjoy Ira on Your own Telegram Bot
+
+## 📝 Logging Support (New Feature)
+
+The Telegram bot now includes built-in logging so you can monitor:
+
+- User messages
+- Bot responses
+- Errors and exceptions
+- Timestamps for all interactions
+```bash
+2025-02-12 18:44:23 - INFO - User: Hello Ira!
+2025-02-12 18:44:24 - INFO - IraAI Response: Hey love, how was your day? 💖
+```
 
 ## How It Works
 IraAI interacts with an API to simulate a virtual girlfriend experience. You provide your **KEY** and **REFRESH_TOKEN**, and the program sends your queries to the API to receive responses.
 
+## Installation
+- Clone or download the repository.
+
+### 1. Clone the repo  
+```bash
+git clone https://github.com/sujalrajpoot/IraAI-Virtual-Girlfriend.git
+```
+
+### 2. Change into directory  
+```bash
+cd IraAI-Virtual-Girlfriend
+```
+
 ## Prerequisites
 Before you start, ensure you have:
 - Python 3.8 or later installed on your system.
-- The `requests` library installed. You can install it using:
+- Run this command to install required packages.
 ```bash
-pip install requests
+pip install -r requirements.txt
 ```
-- Your personal KEY and REFRESH_TOKEN for authentication.
 
-## Installation
-- Clone or download the repository.
-- Ensure all dependencies are installed.
+# Your personal KEY and REFRESH_TOKEN for authentication.
 
 ## Getting Your KEY and REFRESH_TOKEN
 
@@ -36,6 +60,15 @@ To use the IraAI class, you'll need your **KEY** and **REFRESH_TOKEN**. Follow t
 Refer to the image below for detailed instructions:
 
 ![How to Get KEY and REFRESH_TOKEN](Credentials.png)
+
+## 🔧 Environment setup
+
+Make sure to create a .env (or set environment variables) with your credentials, for example:
+
+```bash
+KEY=your_key_here
+REFRESH_TOKEN=your_refresh_token_here
+```
 
 ## Usage
 - Start chatting with IraAI:

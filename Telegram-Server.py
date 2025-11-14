@@ -1,21 +1,32 @@
 import os
 import json
 import random
+import logging
 import requests
+from time import sleep
 from datetime import datetime
+from telegram import Update, error
 from dotenv import load_dotenv;load_dotenv()
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 class IraAI:
     """
     ## A class to interact with the IraAI chatbot API. Handles token management, user authentication, and sending/receiving chat messages.
+
+    - Attributes:
+        - access_token (str): Bearer token for authenticating API requests.
+        - firebaseId (str): Unique identifier for the user.
     """
     def __init__(self) -> None:
         """
         - Initializes the IraAI instance by loading or generating necessary credentials.
         - If the credentials file does not exist or is corrupted, it fetches a new token.
         """
-        self.credentials_file = os.path.join(os.getcwd(), "IraAI.json")  # Path to the credentials file
-        self.timeout = 30 # Timeout for requests in seconds
+        self.credentials_file = r'IraAI.json'  # Path to the credentials file
         try:
             # Check if the credentials file exists
             if os.path.exists(self.credentials_file):
@@ -25,26 +36,22 @@ class IraAI:
                 self.access_token = data['access_token']
                 self.firebaseId = data['user_id']
             else:
-                print("Credentials File Not Found.")
-                with open(self.credentials_file, 'w') as json_file:
-                    json.dump({}, json_file)
-                print(f"{self.credentials_file} has been created. Please wait while we generate a new token...")
-                print(self._get_token())
-                self.__init__()  # Reinitialize after fetching the token
+                raise FileNotFoundError("Credentials File Not Found.")
         except FileNotFoundError as e:
             # Handle missing credentials file
-            print(f"\033[1;91m{e}\033[0m")
-            print(self._get_token())  # Fetch a new token
+            logging.info(e)
+            logging.info(self._get_token())  # Fetch a new token
             self.__init__()  # Reinitialize after fetching the token
         except json.JSONDecodeError:
             # Handle corrupted or invalid JSON file
-            print("\033[1;91mError: Your JSON file is corrupted or does not match the required credentials format. Please reinitialize or regenerate the file.\033[0m")
-            print(self._get_token())  # Fetch a new token
+            logging.info("Error: Your JSON file is corrupted or does not match the required credentials format. Please reinitialize or regenerate the file.")
+            logging.info(self._get_token())  # Fetch a new token
             self.__init__()  # Reinitialize after fetching the token
+            
         except KeyError as e:
             # Handle missing keys in the JSON file
-            print(f"\033[1;91mError: Missing required key {e} in the JSON file. Please reinitialize or regenerate the file.\033[0m")
-            print(self._get_token())  # Fetch a new token
+            logging.info(f"Error: Missing required key {e} in the JSON file. Please reinitialize or regenerate the file.")
+            logging.info(self._get_token())  # Fetch a new token
             self.__init__()  # Reinitialize after fetching the token
 
     def _get_token(self) -> str:
@@ -54,25 +61,38 @@ class IraAI:
         - Returns:
             - str: Success or error message based on the response.
         """
+        headers = {
+            'accept': '*/*',
+            'content-type': 'application/x-www-form-urlencoded',
+            'origin': 'https://ira.rumik.ai',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        }
         params = {'key': os.getenv('KEY')}
         data = {
             'grant_type': 'refresh_token',
             'refresh_token': os.getenv('REFRESH_TOKEN'),
         }
+        print(params, data)
         try:
-            response = requests.post('https://securetoken.googleapis.com/v1/token', params=params, data=data, timeout=self.timeout)
-            response.raise_for_status()  # Raise an error for bad status codes
+            response = requests.post(
+                'https://securetoken.googleapis.com/v1/token',
+                params=params,
+                headers=headers,
+                data=data,
+                timeout=100  # Set a timeout for the request
+            )
+
             if response.status_code == 200:
                 # Save the response content to the credentials file
                 with open(self.credentials_file, 'w') as json_file:
                     json.dump(response.json(), json_file, indent=4)
-                return f"\033[1;92mToken saved to {self.credentials_file} successfully.\033[0m\n"
+                return f"Token saved to {self.credentials_file} successfully."
             elif response.status_code==400:
-                return f"\033[1;91mError {json.loads(response.content)['error']['message']} Make Sure You have Provided the correct KEY and REFRESH_TOKEN\033[0m\n"
+                return f"Error {json.loads(response.content)['error']['message']} Make Sure You have Provided the ***KEY*** and ***REFRESH_TOKEN***"
             else:
-                return f"\033[1;91mError {response.status_code}: {response.content}\033[0m\n"
+                return f"Error {response.status_code}: {response.content}"
         except requests.exceptions.RequestException as e:
-            return f"\033[1;91mRequest failed: {str(e)}\033[0m\n"
+            return f"Request failed: {str(e)}"
 
     def chat(self, query: str) -> str:
         """
@@ -111,7 +131,7 @@ class IraAI:
             'chemistry_id': random_chemistry_id,
             'messages': [
                 {
-                    'content': query,
+                    'content': 'aaj kya kar rhi ho?',
                     'emojiReaction': None,
                     'isCleared': False,
                     'parentMessageId': None,
@@ -130,7 +150,7 @@ class IraAI:
                 headers=headers,
                 json=json_data,
                 stream=True,
-                timeout=self.timeout  # Set a timeout for the request
+                timeout=100  # Set a timeout for the request
             )
 
             if response.status_code == 200:
@@ -143,18 +163,71 @@ class IraAI:
                         streaming_response += stream_data
                 return streaming_response
             elif response.status_code == 403:
-                print("\033[1;91mToken expired. Generating a new one...\033[0m")
-                print(self._get_token())
+                logging.info("Token expired. Generating a new one...")
+                logging.info(self._get_token())
                 self.__init__()
                 return self.chat(query=query)
             else:
                 return f"Error {response.status_code}: {response.content}"
         except requests.exceptions.RequestException as e:
-            return f"\033[1;91mRequest failed: {str(e)}\033[0m"
+            return f"Request failed: {str(e)}"
+    
+    # Define the command handler for /start command
+    def start(self, update: Update, context: CallbackContext):
+        user = update.message.from_user
+        logging.info(f"User: {user.username} started the bot.")
+        update.message.reply_text(f"Hello, {user.first_name}! kya chal rha hai. 🙂")
 
-if __name__ == "__main__":
-    AI = IraAI()
-    while True:
-        query = input("You: ")
-        if not query.strip():continue
-        print(f"\nIraAI: \033[1;93m{AI.chat(query=query.strip())}\033[0m\n")
+    # Define the text message handler to accept only text messages
+    def text_handler(self, update: Update, context: CallbackContext):
+        # Only accepts text messages
+        if update.message.text:
+            logging.info(f"User: {update.message.from_user.username}, Message: {update.message.text}")
+            reply_message = self.chat(query=update.message.text.strip())
+            update.message.reply_text(reply_message, timeout=None)
+            logging.info(f"Ira Reply To: {update.message.from_user.username}, Message: {reply_message}\n")
+        else:
+            logging.info("Non-text message received, ignored.")
+
+# Main function to set up the bot
+def main():
+    try:
+        AI = IraAI()
+        BOT_TOEKN = os.getenv('BOT_TOKEN')
+    
+        # Log to monitor bot startup
+        logging.info('Starting Server...')
+
+        updater = Updater(token=BOT_TOEKN, use_context=True)
+    
+        # Get the dispatcher to register handlers
+        dispatcher = updater.dispatcher
+    
+        # Register command handlers
+        dispatcher.add_handler(CommandHandler("start", AI.start))
+    
+        # Register the text message handler (only text messages are processed)
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, AI.text_handler))
+    
+        # Start the bot
+        updater.start_polling()
+    
+        logging.info("Server is now running...")
+
+        # ➤ Print bot username after startup
+        bot_username = updater.bot.username
+        print(f"You can chat now on 🤖 @{bot_username}\n")
+
+        updater.idle()
+    except (Exception, error.NetworkError) as e:
+        logging.error(
+            "Server failed to start due to an unexpected error.",
+            extra={"details": str(e)}
+        )
+        logging.info("Attempting restart in 2 seconds...\n")
+        sleep(2)
+        main()  # Restart the main function on any exception
+
+if __name__ == '__main__':
+    main()
+    
